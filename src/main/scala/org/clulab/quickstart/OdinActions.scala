@@ -7,7 +7,7 @@ import org.clulab.utils.FileUtils
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 
-
+// Example of an Attachment
 case class PitchInfo(pitch: String, octave: Option[Int], accidental: Option[String]) extends Attachment
 
 

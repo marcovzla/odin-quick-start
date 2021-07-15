@@ -5,16 +5,16 @@ import com.typesafe.config.ConfigFactory
 import org.clulab.odin.{ExtractorEngine, Mention, State}
 import org.clulab.processors.{Document, Processor, Sentence}
 import org.clulab.processors.fastnlp.FastNLPProcessor
-import org.clulab.quickstart.entities.{EntityFinder, RuleBasedEntityFinder}
 import org.clulab.sequences.LexiconNER
 import org.clulab.utils.{FileUtils, FilterByLength, PassThroughFilter}
 import org.slf4j.LoggerFactory
 import ai.lum.common.ConfigUtils._
+import org.clulab.openie.entities.RuleBasedEntityFinder
 
 
-class OdinEngine(val config: Config = ConfigFactory.load("quickstart")) {
+class OdinEngine(val config: Config = ConfigFactory.load()) {
 
-  val odinConfig = config[Config]("OdinEngine")
+  val odinConfig = config.apply[Config]("OdinEngine")
 
   val proc: Processor = new FastNLPProcessor()
   // Document Filter, prunes sentences form the Documents to reduce noise/allow reasonable processing time
@@ -31,7 +31,7 @@ class OdinEngine(val config: Config = ConfigFactory.load("quickstart")) {
     // These are the values which can be reloaded.  Query them for current assignments.
     val actions: OdinActions,
     val engine: ExtractorEngine,
-    val entityFinder: Option[EntityFinder],
+    val entityFinder: Option[RuleBasedEntityFinder],
     val lexiconNER: Option[LexiconNER],
   )
 
@@ -48,17 +48,15 @@ class OdinEngine(val config: Config = ConfigFactory.load("quickstart")) {
 
       // EntityFinder
       val entityFinder = if (enableEntityFinder) {
-        val entityFinderConfig = config[Config]("entityFinder")
-        val entityRulesPath = entityFinderConfig[String]("entityRulesPath")
-        val avoidRulesPath = entityFinderConfig[String]("avoidRulesPath")
-        val maxHops = entityFinderConfig[Int]("maxHops")
-        Some(RuleBasedEntityFinder(entityRulesPath, avoidRulesPath, maxHops = maxHops))
+        val entityFinderConfig = config.apply[Config]("entityFinder")
+        val maxHops = entityFinderConfig.apply[Int]("maxHops")
+        Some(RuleBasedEntityFinder(maxHops = maxHops))
       } else None
 
       // LexiconNER files
       val lexiconNER = if(enableLexiconNER) {
-        val lexiconNERConfig = config[Config]("lexiconNER")
-        val lexicons = lexiconNERConfig[List[String]]("lexicons")
+        val lexiconNERConfig = config.apply[Config]("lexiconNER")
+        val lexicons = lexiconNERConfig.apply[List[String]]("lexicons")
         Some(LexiconNER(lexicons, caseInsensitiveMatching = true))
       } else None
 
