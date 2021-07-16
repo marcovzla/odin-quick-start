@@ -42,7 +42,7 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
 
 
   def getMentions(text: String) = Action {
-    val (doc, eidosMentions) = processPlaySentence(ieSystem, text)
+    val (doc, eidosMentions) = processPlayText(ieSystem, text)
     println(s"Sentence returned from processPlaySentence : ${doc.sentences.head.getSentenceText}")
     val json = JsonUtils.mkJsonFromMentions(eidosMentions)
     Ok(json)
@@ -50,33 +50,22 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
 
 
 
-  def processPlaySentence(ieSystem: OdinEngine, text: String): (Document, Vector[Mention]) = {
+  def processPlayText(ieSystem: OdinEngine, text: String): (Document, Vector[Mention]) = {
     // preprocessing
-    println(s"Processing sentence : ${text}" )
+    println(s"Processing text : ${text}" )
     val doc = ieSystem.annotate(text)
 
-
-    println(s"DOC : ${doc}")
     // extract mentions from annotated document
     val mentions = ieSystem.extractFrom(doc).sortBy(m => (m.sentence, m.getClass.getSimpleName))
     println(s"Done extracting the mentions ... ")
-    println(s"They are : ${mentions.map(m => m.text).mkString(",\t")}")
 
-//    println(s"Grounding the gradable adjectives ... ")
-//    val groundedEntities = groundEntities(ieSystem, mentions)
-
-    println(s"Getting entity linking events ... ")
-
-    println("DONE .... ")
-//    println(s"Grounded Adjectives : ${groundedAdjectives.size}")
-    // return the sentence and all the mentions extracted ... TODO: fix it to process all the sentences in the doc
     (doc, mentions.sortBy(_.start))
   }
 
-  def parseSentence(text: String, showEverything: Boolean) = Action {
-    val (doc, eidosMentions) = processPlaySentence(ieSystem, text)
-    println(s"Sentence returned from processPlaySentence : ${doc.sentences.head.getSentenceText}")
-    val json = mkJson(text, doc, eidosMentions, showEverything) // we only handle a single sentence
+  def parseText(text: String, showEverything: Boolean) = Action {
+    val (doc, eidosMentions) = processPlayText(ieSystem, text)
+
+    val json = mkJson(text, doc, eidosMentions, showEverything)
     Ok(json)
   }
 
@@ -130,41 +119,41 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
         "relations" -> mkJsonFromDependencies(doc)
       )
     val eidosJsonObj = mkJsonForEidos(text, sent, mentions, showEverything)
-    val groundedAdjObj = mkGroundedObj(mentions)
+    val mentionDetailObj = mkMentionDetailObj(mentions)
     val parseObj = mkParseObj(doc)
 
-    // These print the html and it's a mess to look at...
-    // println(s"Grounded Gradable Adj: ")
-    // println(s"$groundedAdjObj")
     Json.obj(
       "syntax" -> syntaxJsonObj,
       "eidosMentions" -> eidosJsonObj,
-      "groundedAdj" -> groundedAdjObj,
+      "mentionDetail" -> mentionDetailObj,
       "parse" -> parseObj
     )
   }
 
-  def mkGroundedObj(mentions: Vector[Mention]): String = {
+  def mkMentionDetailObj(mentions: Vector[Mention]): String = {
     var objectToReturn = ""
 
     // Entities
-    val entities = mentions.filter(_ matches "Entity")
-    if (entities.nonEmpty){
-      objectToReturn += "<h2>Found Entities:</h2>"
-      for (entity <- entities) {
-        objectToReturn += s"${DisplayUtils.webAppMention(entity)}"
+    val tbs = mentions.collect { case tb: TextBoundMention => tb }
+    if (tbs.nonEmpty){
+      objectToReturn += "<h2>Found Odin TextBoundMention(s):</h2>"
+      for (tb <- tbs) {
+        objectToReturn += s"${DisplayUtils.webAppMention(tb)}"
       }
     }
 
     // collect relation mentions for display
-    val relations = mentions.flatMap {
-      case m: RelationMention => Some(m)
-      case _ => None
+    val relations = mentions.collect { case rm: RelationMention => rm }
+    if (relations.nonEmpty){
+      objectToReturn += "<h2>Found Odin RelationMention(s):</h2>"
+      for (r <- relations) {
+        objectToReturn += s"${DisplayUtils.webAppMention(r)}"
+      }
     }
 
-    val events = mentions.filter(_ matches "Event")
+    val events = mentions.collect {case em: EventMention => em }
     if (events.nonEmpty) {
-      objectToReturn += s"<h2>Found Events:</h2>"
+      objectToReturn += s"<h2>Found Odin EventMention(s):</h2>"
       for (event <- events) {
         objectToReturn += s"${DisplayUtils.webAppMention(event)}"
       }

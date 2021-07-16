@@ -7,14 +7,12 @@ scalaVersion := "2.12.4"
 //EclipseKeys.withSource := true
 
 libraryDependencies ++= {
-  val procVer = "7.4.2"
+  val procVer = "8.4.3"
 
   Seq(
     "org.clulab"    %% "processors-main"          % procVer,
     "org.clulab"    %% "processors-corenlp"       % procVer,
-    "org.clulab"    %% "processors-odin"          % procVer,
-    "org.clulab"    %% "processors-modelsmain"    % procVer,
-    "org.clulab"    %% "processors-modelscorenlp" % procVer,
+    "org.clulab"    %% "processors-openie"        % procVer,
     "ai.lum"        %% "common"                   % "0.0.8",
     "org.scalatest" %% "scalatest"                % "3.0.4" % "test",
     "com.typesafe"  %  "config"                   % "1.3.1",

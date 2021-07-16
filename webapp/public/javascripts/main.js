@@ -92,11 +92,11 @@ head.ready(function() {
 
         // collect form data
         var formData = {
-            'sent': $('textarea[name=text]').val(),
+            'text': $('textarea[name=text]').val(),
             'showEverything': $('input[name=showEverything]').is(':checked')
         }
 
-        if (!formData.sent.trim()) {
+        if (!formData.text.trim()) {
             alert("Please write something.");
             return;
         }
@@ -107,7 +107,7 @@ head.ready(function() {
         // process the form
         $.ajax({
             type: 'GET',
-            url: 'parseSentence',
+            url: 'parseText',
             data: formData,
             dataType: 'json',
             encode: true
@@ -121,7 +121,7 @@ head.ready(function() {
             console.log(data);
             syntaxLiveDispatcher.post('requestRenderData', [$.extend({}, data.syntax)]);
             eidosMentionsLiveDispatcher.post('requestRenderData', [$.extend({}, data.eidosMentions)]);
-            document.getElementById("groundedAdj").innerHTML = data.groundedAdj;
+            document.getElementById("mentionDetail").innerHTML = data.mentionDetail;
             document.getElementById("parse").innerHTML = data.parse;
             // hide spinner
             document.getElementById("overlay").style.display = "none";
